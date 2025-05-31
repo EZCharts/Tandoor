@@ -48,12 +48,12 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: tandoor-login
-                  value: username
+                  key: username
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: tandoor-login
-                  value: password
+                  key: password
           volumeMounts:
             - name: db-vol
               mountPath: /var/lib/postgresql/data
@@ -81,17 +81,17 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: tandoor-login
-                  value: username
+                  key: username
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: tandoor-login
-                  value: password
+                  key: password
             - name: SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: tandoor-login
-                  value: password
+                  key: password
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
