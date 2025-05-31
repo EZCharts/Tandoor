@@ -68,9 +68,9 @@ spec:
             - name: DB_ENGINE
               value: {{ (.Values.db | default dict).engine | default "django.db.backends.postgresql" | quote }}
             - name: DISABLE_EXTERNAL_CONNECTORS
-              value: 0
+              value: {{ .Values.disable_external_connectors | default "0" | quote }}
             - name: EXTERNAL_CONNECTORS_QUEUE_SIZE
-              value: 100
+              value: {{ .Values.external_connectors_queue_size | default "100" | quote }}
             - name: POSTGRES_DB
               value: {{ (.Values.db | default dict).name | default "djangodb" | quote }}
             - name: POSTGRES_HOST
