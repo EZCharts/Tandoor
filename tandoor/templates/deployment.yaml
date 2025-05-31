@@ -94,6 +94,8 @@ spec:
                 secretKeyRef:
                   name: tandoor-login
                   key: password
+            - name: TANDOOR_PORT
+              value: "8080"
           ports:
             - name: http
               containerPort: {{ .Values.service.port }} # Ensure this resolves to 8080
