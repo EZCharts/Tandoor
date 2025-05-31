@@ -37,13 +37,13 @@ spec:
           image: "postgres:16-alpine"
           env:
             - name: DB_ENGINE
-              value: {{ .Values.db.engine | default "django.db.backends.postgresql" | quote }}
+              value: {{ (.Values.db | default dict).engine | default "django.db.backends.postgresql" | quote }}
             - name: POSTGRES_DB
-              value: {{ .Values.db.name | default "djangodb" | quote }}
+              value: {{ (.Values.db | default dict).name | default "djangodb" | quote }}
             - name: POSTGRES_HOST
-              value: {{ .Values.db.host | default "db_recipes" | quote }}
+              value: {{ (.Values.db | default dict).host | default "db_recipes" | quote }}
             - name: POSTGRES_PORT
-              value: {{ .Values.db.port | default "5432" | quote }}
+              value: {{ (.Values.db | default dict).port | default "5432" | quote }}
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
@@ -66,17 +66,17 @@ spec:
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           env:
             - name: DB_ENGINE
-              value: {{ .Values.db.engine | default "django.db.backends.postgresql" | quote }}
+              value: {{ (.Values.db | default dict).engine | default "django.db.backends.postgresql" | quote }}
             - name: DISABLE_EXTERNAL_CONNECTORS
               value: 0
             - name: EXTERNAL_CONNECTORS_QUEUE_SIZE
               value: 100
             - name: POSTGRES_DB
-              value: {{ .Values.db.name | default "djangodb" | quote }}
+              value: {{ (.Values.db | default dict).name | default "djangodb" | quote }}
             - name: POSTGRES_HOST
-              value: {{ .Values.db.host | default "db_recipes" | quote }}
+              value: {{ (.Values.db | default dict).host | default "db_recipes" | quote }}
             - name: POSTGRES_PORT
-              value: {{ .Values.db.port | default "5432" | quote }}
+              value: {{ (.Values.db | default dict).port | default "5432" | quote }}
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
@@ -96,23 +96,6 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
-          {{- with .Values.livenessProbe }}
-          livenessProbe:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .Values.readinessProbe }}
-          readinessProbe:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .Values.resources }}
-          resources:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          volumeMounts:
-            - name: staticfiles
-              mountPath: /opt/recipes/staticfiles
-            - name: mediafiles
-              mountPath: /opt/recipes/mediafiles
       volumes:
         - name: db-vol
         - name: staticfiles
