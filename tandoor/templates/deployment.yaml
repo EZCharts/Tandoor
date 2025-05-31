@@ -41,7 +41,8 @@ spec:
             - name: POSTGRES_DB
               value: {{ (.Values.db | default dict).name | default "djangodb" | quote }}
             - name: POSTGRES_HOST
-              value: {{ (.Values.db | default dict).host | default "db_recipes" | quote }}
+              # Postgres is a sidecar in the same pod, so connect via localhost
+              value: "127.0.0.1"
             - name: POSTGRES_PORT
               value: {{ (.Values.db | default dict).port | default "5432" | quote }}
             - name: POSTGRES_USER
@@ -57,7 +58,7 @@ spec:
           volumeMounts:
             - name: db-vol
               mountPath: /var/lib/postgresql/data
-        - name: {{ .Chart.Name }}
+        - name: {{ .Chart.Name }} # This resolves to 'tandoor'
           {{- with .Values.securityContext }}
           securityContext:
             {{- toYaml . | nindent 12 }}
@@ -74,7 +75,8 @@ spec:
             - name: POSTGRES_DB
               value: {{ (.Values.db | default dict).name | default "djangodb" | quote }}
             - name: POSTGRES_HOST
-              value: {{ (.Values.db | default dict).host | default "db_recipes" | quote }}
+              # IMPORTANT: For sidecar containers, use localhost to connect to the other container in the same pod
+              value: "127.0.0.1"
             - name: POSTGRES_PORT
               value: {{ (.Values.db | default dict).port | default "5432" | quote }}
             - name: POSTGRES_USER
@@ -94,11 +96,19 @@ spec:
                   key: password
           ports:
             - name: http
-              containerPort: {{ .Values.service.port }}
+              containerPort: {{ .Values.service.port }} # Ensure this resolves to 8080
               protocol: TCP
+          volumeMounts: # Added volume mounts for Tandoor application
+            - name: staticfiles
+              mountPath: /opt/recipes/staticfiles
+            - name: mediafiles
+              mountPath: /opt/recipes/mediafiles
       volumes:
         - name: db-vol
+          # If you want persistent storage for Postgres, you'll need a PersistentVolumeClaim here
+          # For a quick test, emptyDir is fine, but data will be lost if pod restarts
         - name: staticfiles
+          # Similarly, for persistent static/media files, use a PersistentVolumeClaim
         - name: mediafiles
       {{- with .Values.nodeSelector }}
       nodeSelector:
