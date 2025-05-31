@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "tandoor.fullname" . }}
+  labels:
+    {{- include "tandoor.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "tandoor.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "tandoor.labels" . | nindent 8 }}
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "tandoor.serviceAccountName" . }}
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: postgres
+          image: "postgres:16-alpine"
+          env:
+            - name: DB_ENGINE
+              value: {{ .Values.db.engine | default "django.db.backends.postgresql" | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.db.name | default "djangodb" | quote }}
+            - name: POSTGRES_HOST
+              value: {{ .Values.db.host | default "db_recipes" | quote }}
+            - name: POSTGRES_PORT
+              value: {{ .Values.db.port | default "5432" | quote }}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: tandoor-login
+                  value: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tandoor-login
+                  value: password
+          volumeMounts:
+            - name: db-vol
+              mountPath: /var/lib/postgresql/data
+        - name: {{ .Chart.Name }}
+          {{- with .Values.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "vabene1111/recipes:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: DB_ENGINE
+              value: {{ .Values.db.engine | default "django.db.backends.postgresql" | quote }}
+            - name: DISABLE_EXTERNAL_CONNECTORS
+              value: 0
+            - name: EXTERNAL_CONNECTORS_QUEUE_SIZE
+              value: 100
+            - name: POSTGRES_DB
+              value: {{ .Values.db.name | default "djangodb" | quote }}
+            - name: POSTGRES_HOST
+              value: {{ .Values.db.host | default "db_recipes" | quote }}
+            - name: POSTGRES_PORT
+              value: {{ .Values.db.port | default "5432" | quote }}
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: tandoor-login
+                  value: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tandoor-login
+                  value: password
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tandoor-login
+                  value: password
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          {{- with .Values.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - name: staticfiles
+              mountPath: /opt/recipes/staticfiles
+            - name: mediafiles
+              mountPath: /opt/recipes/mediafiles
+      volumes:
+        - name: db-vol
+        - name: staticfiles
+        - name: mediafiles
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
